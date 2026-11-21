@@ -1,76 +1,94 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-<meta name="viewport" content="width = device-width, initial-scale = 1, minimum-scale = 1, maximum-scale = 1, user-scalable=no" />
-<meta name="description" content="HTML5摄像头,Access the desktop camera and video using HTML, JavaScript, and Canvas. The camera may be controlled using HTML5 and getUserMedia." />
-<meta name="description" content="HTML5摄像头,Camera and Video Control with HTML5" />
-<title>HTML5摄像头/Camera and Video Control with HTML5</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>在线摄像头拍照工具</title>
+<meta name="description" content="调用电脑摄像头实时预览并拍照保存为图片，全部在本地浏览器完成，不上传服务器。">
 <style>
-    video { border: 1px solid #ccc; display: block; margin: 0 0 20px 0; }
-    #canvas { margin-top: 20px; border: 1px solid #ccc; display: block; }
+:root{
+  --primary:#5b6cff; --primary-d:#4a5bf0; --bg:#eef1f7; --card:#ffffff;
+  --text:#1f2430; --muted:#6b7280; --border:#e2e6ee; --soft:#f4f6fb;
+  --ok:#16a34a; --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:28px 18px 60px}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:.5px}
+header p{color:var(--muted);margin:0;font-size:15px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 24px rgba(30,41,59,.07);padding:22px;margin-bottom:18px}
+label.field{display:block;font-weight:600;margin:0 0 8px;font-size:15px}
+textarea,input[type=text]{width:100%;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#fcfdff;resize:vertical;outline:none;transition:border .15s,box-shadow .15s}
+textarea:focus,input[type=text]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,108,255,.15)}
+textarea{min-height:180px;line-height:1.7}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:10px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,transform .05s}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-d)}
+.btn-ghost{background:#fff;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--soft)}
+.hint{color:var(--muted);font-size:13.5px;margin-top:10px}
+.output{margin-top:14px}
+.output textarea{min-height:140px;background:var(--soft)}
+.result-num{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}
+.stat{background:var(--soft);border-radius:10px;padding:10px 16px;min-width:120px}
+.stat b{font-size:22px;color:var(--primary);display:block}
+.stat span{font-size:13px;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:30px}
+footer a{color:var(--primary);text-decoration:none}
+#toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);background:#1f2430;color:#fff;
+  padding:10px 20px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:99}
+#toast.show{opacity:.95}
+@media(max-width:600px){header h1{font-size:21px}.wrap{padding:18px 12px 40px}.card{padding:16px}}
 </style>
 </head>
 <body>
-<h2>HTML5摄像头/Camera and Video Control with HTML5</h2>
-<div id="promoNode"></div>
-    <p>支持多个浏览器/Using Opera Next or Chrome Canary, Edge use this page to take your picture!</p>
-    <!--
-        Ideally these elements aren't created until it's confirmed that the
-        client supports video/camera, but for the sake of illustrating the
-        elements involved, they are created with markup (not JavaScript)
-    -->
-    <video id="video" width="640" height="480" autoplay></video>
-    <button id="snap" class="sexyButton">保存当前图片/Snap Photo</button>
-    <canvas id="canvas" width="640" height="480"></canvas>
-    <script>
-        // Put event listeners into place
-        window.addEventListener("DOMContentLoaded", function() {
-            // Grab elements, create settings, etc.
-            var canvas = document.getElementById('canvas');
-            var context = canvas.getContext('2d');
-            var video = document.getElementById('video');
-            var mediaConfig =  { video: true };
-            var errBack = function(e) {
-                console.log('An error has occurred!', e)
-            };
+<div class="wrap">
+<header><h1>在线摄像头拍照工具</h1><p>调用电脑摄像头实时预览并拍照保存为图片，全部在本地浏览器完成，不上传服务器。</p></header>
 
-            // Put video listeners into place
-            if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia(mediaConfig).then(function(stream) {
-                    //video.src = window.URL.createObjectURL(stream);
-                    video.srcObject = stream;
-                    video.play();
-                });
-            }
-
-            /* Legacy code below! */
-            else if(navigator.getUserMedia) { // Standard
-                navigator.getUserMedia(mediaConfig, function(stream) {
-                    video.src = stream;
-                    video.play();
-                }, errBack);
-            } else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
-                navigator.webkitGetUserMedia(mediaConfig, function(stream){
-                    video.src = window.webkitURL.createObjectURL(stream);
-                    video.play();
-                }, errBack);
-            } else if(navigator.mozGetUserMedia) { // Mozilla-prefixed
-                navigator.mozGetUserMedia(mediaConfig, function(stream){
-                    video.src = window.URL.createObjectURL(stream);
-                    video.play();
-                }, errBack);
-            }
-
-            // Trigger photo take
-            document.getElementById('snap').addEventListener('click', function() {
-                context.drawImage(video, 0, 0, 640, 480);
-            });
-        }, false);
-    </script>
+<div class="card">
+  <label class="field">摄像头拍照（需授权，纯本地不上传）</label>
+  <div style="text-align:center">
+    <video id="video" autoplay playsinline style="width:100%;max-width:640px;border-radius:12px;background:#000"></video>
+    <canvas id="canvas" width="640" height="480" style="display:none"></canvas>
+  </div>
+  <div class="row" style="justify-content:center">
+    <button class="btn btn-primary" onclick="snap()">拍照</button>
+    <button class="btn btn-ghost" onclick="download()">保存照片</button>
+  </div>
+  <p class="hint" id="tip">浏览器会请求摄像头权限；未授权或非 HTTPS 环境可能无法使用。</p>
 </div>
-</main>
+<div class="card output" style="text-align:center">
+  <label class="field">预览</label>
+  <img id="photo" style="max-width:100%;border-radius:12px" alt="拍照预览">
+</div>
+<script>
+let stream=null;
+navigator.mediaDevices.getUserMedia({video:true}).then(s=>{stream=s;document.getElementById('video').srcObject=s;}).catch(e=>{document.getElementById('tip').textContent='无法打开摄像头：'+e.message;});
+function snap(){
+  const v=document.getElementById('video'),c=document.getElementById('canvas'),ctx=c.getContext('2d');
+  if(!v.videoWidth){toast('摄像头还没准备好');return;}
+  ctx.drawImage(v,0,0,640,480);
+  document.getElementById('photo').src=c.toDataURL('image/png');
+  toast('已拍照');
+}
+function download(){
+  const src=document.getElementById('photo').src;
+  if(!src){toast('先拍一张');return;}
+  const a=document.createElement('a');a.href=src;a.download='photo-'+Date.now()+'.png';a.click();
+}
+</script>
+
+<footer>本工具由 wangchenyu.com 整理开源，纯浏览器本地运行，数据不上传。<br>作者：王尘宇 · <a href="https://wangchenyu.com">wangchenyu.com</a> · <a href="https://gitee.com/iseeyu">Gitee</a></footer>
+</div>
+<div id="toast"></div>
+<script>
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1600);}
+function copyText(txt){if(!txt){toast('没有可复制的内容');return;}navigator.clipboard.writeText(txt).then(()=>toast('已复制到剪贴板')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('已复制');});}
+</script>
 </body>
 </html>
